@@ -28,20 +28,24 @@ namespace CPW219_AspnetMVC_CRUD_Debugging.Controllers
         {
             if (ModelState.IsValid)
             {
+
                 await _context.AddAsync(product);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
+                ViewData["Message"] = $"{product.Name} has been added to the database";
             }
             return View(product);
         }
-
+        
+        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var product = await _context.Product.FindAsync(id);
-            if (product == null)
+            Product productToEdit = await _context.Product.FindAsync(id);
+            if (productToEdit == null)
             {
                 return NotFound();
             }
-            return View(product);
+            return View(productToEdit);
         }
 
         [HttpPost]
@@ -49,33 +53,40 @@ namespace CPW219_AspnetMVC_CRUD_Debugging.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Update(product);
+                _context.Product.Update(product);
                 await _context.SaveChangesAsync();
-
-                return RedirectToAction(nameof(Index));
+                TempData["Message"] = $"{product.Name} has been updated in the database";
+                return RedirectToAction("Index");
             }
             return View(product);
         }
 
+        [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            var product = await _context.Product
-                .FirstOrDefaultAsync(m => m.ProductId == id);
-
-            if (product == null)
+            Product productToDelete = await _context.Product.FindAsync(id);
+            if (productToDelete == null)
             {
                 return NotFound();
             }
-
-            return View(product);
+            return View(productToDelete);
         }
 
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var product = await _context.Product.FindAsync(id);
-            _context.Product.Remove(product);
-            return RedirectToAction(nameof(Index));
+            Product productToDelete = await _context.Product.FindAsync(id);
+            if (productToDelete != null)
+            {
+                // Prepares Insert
+                _context.Product.Remove(productToDelete);
+                
+                await _context.SaveChangesAsync();
+                TempData["Message"] = productToDelete.Name + " was deleted successfully.";
+                return RedirectToAction("Index");
+            }
+            TempData["Message"] = "This product was already deleted.";
+            return RedirectToAction("Index");
         }
 
         private bool ProductExists(int id)
